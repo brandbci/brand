@@ -1,0 +1,39 @@
+
+tmp/
+proc/rest/elm-stuff/
+
+# vim swap files
+*.swp
+
+# python compiles
+__pycache__
+*.pyc
+
+# binaries, compiled objects, and generated code
+bin/
+
+# should be in bin, but no compiled c or cython objects
+*.o
+*.bin
+
+# All backup code should be saved in subfolders with "old":
+**/old
+
+# dump files -- in case they end up outside of /run/
+*.rdb
+
+# images and media
+*.jbp
+*.bmp
+*.avi
+*.mp[0-9]
+
+# matlab data
+*.mat
+
+# Duplicate .pyx files
+pyglet_display.pyx
+
+# Python
+*.egg-info
+*.pkl

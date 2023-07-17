@@ -1,0 +1,11 @@
+[submodule "lib/hiredis"]
+	path = lib/hiredis
+	url = https://github.com/redis/hiredis.git
+	ignore = untracked
+[submodule "lib/redis"]
+	path = lib/redis
+	url = https://github.com/antirez/redis.git 
+	ignore = untracked
+[submodule "lib/nxjson"]
+	path = lib/nxjson
+	url = https://github.com/thestr4ng3r/nxjson.git
