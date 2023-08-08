@@ -1,4 +1,4 @@
-# BRAND Real-time Asynchronous Neural Data System (BRAND)
+# Backend for Real-time Asynchronous Neural Decoding (BRAND)
 
 ## Overview
 BRAND is built using a graph architecture with small, individual nodes that can be flexibly interconnected. Each node is a separate process, so as to allow for parallelization and re-prioritization of each node. Interprocess communication and data storage is all built around the [Redis](redis.io) in-memory database and caching system.
