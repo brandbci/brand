@@ -1,11 +1,14 @@
 [submodule "lib/hiredis"]
 	path = lib/hiredis
-	url = https://github.com/redis/hiredis.git
+	url = git@github.com:redis/hiredis.git
 	ignore = untracked
+	branch = master
 [submodule "lib/redis"]
 	path = lib/redis
-	url = https://github.com/antirez/redis.git 
+	url = git@github.com:redis/redis.git
 	ignore = untracked
+	branch = 7.0
 [submodule "lib/nxjson"]
 	path = lib/nxjson
-	url = https://github.com/thestr4ng3r/nxjson.git
+	url = git@github.com:thestr4ng3r/nxjson.git
+	branch = master
