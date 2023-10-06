@@ -16,7 +16,7 @@ The layout of each graph is defined in its associated .yaml configuration file. 
 `bootstrap.sh` is provided to automate the environment setup. It installs debian pkg dependencies using `apt-get` and creates the real-time conda environment (rt), which is defined by `environment.yaml`. [hiredis](https://github.com/redis/hiredis) and [redis](https://github.com/antirez/redis/) have been included as submodules, which also get initialized by `bootstrap.sh`. After running bootstrap you simply need to run `make` at the project root. This will build all the project binaries including submodule dependencies. Be sure to activate the conda env before running make for Makefiles dependent on cython.
 
 ```bash
-./boostrap.sh
+./bootstrap.sh
 conda activate rt
 make
 ```
