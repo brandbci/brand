@@ -5,6 +5,8 @@ BRAND is built using a graph architecture with small, individual nodes that can 
 
 The layout of each graph is defined in its associated .yaml configuration file. Graph configuration files are organized by experimental site within modules to allow easy sharing of graphs between experimental sites while allowing per-site customization. BRAND is set up to make creation of new graphs and development of new nodes easy and consistent.
 
+Check out [Ali et al 2024, _J Neural Eng_](https://iopscience.iop.org/article/10.1088/1741-2552/ad3b3a) for a full description of the design and validation of this software. Please cite this paper if you use BRAND in your work.
+
 ## Installation
 
 ### Requirements
