@@ -25,6 +25,13 @@ make
 
 Of note: if any of the source code is updated (for example, when developing a new node), `make` needs to be re-run for those changes to be reflected in the binaries that are run by BRAND. 
 
+Optional `make` usages:
+```bash
+make graph="<path-to-graph/graph-name.yaml>" [machine="<machine-name>"] # to make nodes and derivatives relevant to a given graph yaml and optionally a specific machine
+make node="<name-of-node>" [module="<module-name>"] # to make a single node instead of all nodes and derivatives and optionally specify a module
+make derivative="<name-of-derivative>" [module="<module-name>"] # to make a single derivative instead of all nodes and derivatives and optionally specify a module
+```
+
 ## Directory structure
 
 BRAND follows the following directory structure (where `brand` corresponds to the main folder for this repository):
@@ -48,7 +55,15 @@ where `<module-name>` is the name of an external code module that extends the co
 
 ### `derivatives/`
 
-The `derivatives` folder contains any derivative scripts. Derivatives are code that are run offline using data stored in an `.rdb` file. Consider derivatives to be analysis code. Derivatives are a new feature to BRAND, so check back in the future for more documentation and functionality.
+The `derivatives` folder contains any derivative scripts. Derivatives are scripts that, when run, complete a particular operation and then exit on their own. These are useful for analysis, model, training, data export, etc. This directory's organization is:
+
+```
+|---derivatives
+    |---<derivative_name>
+        |---<derivative_name.EXT>
+```
+
+Presently, supported extensions are `.py` or `.bin`. Optionally, [shebangs](https://en.wikipedia.org/wiki/Shebang_(Unix)) can be used to indicate how to run the derivative if neither a `.py` or `.bin`.
 
 ### `graphs/`
 
@@ -139,7 +154,39 @@ nodes:
       <parameter2_name>: <parameter2_value>
       ...
   ...
+derivatives:
+  - name:         <derivative_1_name>       # including file extension
+    nickname:     <unique_nickname>
+    module:       <path_to_module>
+    run_priority: <run_priority>            # optional
+    machine:      <machine_id>              # optional
+    autorun_step: <autorun_step>            # optional
+    parameters:
+      <parameter1_name>: <parameter1_value>
+      <parameter2_name>: <parameter2_value>
+      ...
+  - full_path:    <full_path_to_derivative_2>
+    nickname:     <unique_nickname>
+    parameters:
+      <parameter1_name>: <parameter1_value>
+      <parameter2_name>: <parameter2_value>
+      ...
+  ...
 ```
+
+Nodes and derivatives have the following required parameters:
+* `name`: Indicates the name of the node or derivative.
+* `nickname`: Indicates the unique nickname of the node or derivative, and must be unique across all nodes and derivatives in the graph.
+* `module`: Indicates the module in which the node or derivative is located.
+
+Nodes and derivatives have the following optional parameters:
+* `run_priority`: The process priority to be given to the node or derivative. Defaults to standard priority.
+* `cpu_affinity`: The specific CPU "core" or list of cores (i.e. 4-5) to be given to the process. Defaults to using the operating system scheduler to assign CPU affinity.
+* `machine`: The machine on which to run the node or derivative. Defaults to being run on the machine running `supervisor`.
+
+Derivatives have the following additional optional parameters:
+* `autorun_step`: Indicates the step in which to run this derivative if the `do_derivatives` `stopGraph` option is set to `1`. Derivatives with the same step number will be run in parallel. Steps will be run in increasing order and wait until all derivatives in the step are completed until proceeding to the next step. Derivatives given step `-1` will be started at the beginning and allowed to run independently of all other steps.
+* `full_path`: Indicates the full path to the derivative and can replace both the required `name` and `module` parameters.
 
 ## Session workflow
 
@@ -204,10 +251,6 @@ optional arguments:
     ```bash
     XADD supervisor_ipstream * commands stopGraph
     ```
-    Alternatively to stop the graph and save NWB export files, use the following Redis command (using `redis-cli` or other Redis interface). Note that this will require having your graph and nodes set up to support the [NWB Export Guidelines](./doc/ExportNwbGuidelines.md).
-    ```bash
-    XADD supervisor_ipstream * commands stopGraphAndSaveNWB 
-    ```
 
 At this time, `supervisor` can only execute one graph at a time. Check back in a future version of BRAND that will support running multiple graphs simultaneously.
 
@@ -215,16 +258,20 @@ At this time, `supervisor` can only execute one graph at a time. Check back in a
 
 Commands can be sent to the `supervisor` through Redis using the following syntax: `XADD supervisor_ipstream * commands <command_name> [<arg_key> <arg_value>]`. The following commands are currently implemented:
 
-* `startGraph [file <path_to_file>] [graph <graph_json>]`: Start graph from YAML file path or from JSON string. If `file` nor `graph` are provided, it runs the previously loaded graph.
 * `loadGraph [file <path_to_file>] [graph <graph_json>]`: Load graph from YAML file path or from JSON string.
+* `startGraph [file <path_to_file>] [graph <graph_json>]`: Start graph from YAML file path or from JSON string. If `file` nor `graph` are provided, it runs the previously loaded graph.
 * `updateParameters [<nickname> '{"<parameter_name>":"<parameter_value>", ...}' ...]`: Updates the supergraph with specified parameter values for specified nodes. This can be executed anytime after having loaded a graph.
-* `stopGraph`: Stop graph, by stopping the processes for each running node.
-* `stopGraphAndSaveNWB`: Stop graph, save `.rdb` file, generate NWB file, and flush the Redis database. Requires following the [NWB Export Guidelines](./doc/ExportNwbGuidelines.md). `stopGraphAndSaveNWB` is suggested for running independent session blocks.
+* `stopGraph [do_save <bool> do_derivatives <bool>]`: Stop graph, by stopping the processes for each running node.
+* `stopChildProcess [nickname <nickname> process_type <node_or_derivative>]`: Stop a single child process (node or derivative).
 * `saveRdb`: Dumps the database to disk as a `.rdb` file.
-* `saveNwb`: Converts the present database streams to an NWB file, if configured as described in `stopGraphAndSaveNWB`. There must not be a running graph to execute the `saveNwb` command.
-* `flushDb`: **USE WITH CAUTION** Flushes the database.
-* `setDataDir [path <path_to_data_directory>]`: Sets the root directory for storing data (i.e. from `saveRdb` and `saveNwb` commands).
-* `make`: Makes all binaries on the `supervisor` and `booter` machines. There must not be a running graph to execute the `make` command.
+* `flushRedis`: **USE WITH CAUTION** Flushes the database.
+* `setDataDir [path <path_to_data_directory>]`: Sets the root directory for storing data (i.e. from `saveRdb` commands).
+* `setRdbFilename [filename <filename>]`: Sets the database's filename.
+* `killAutorunDerivatives`: Kills all derivatives configured to automatically run after the graph ends, if enabled.
+* `runDerivatives derivatives <comma-separated-nickname-list>`: Runs the derivatives in the comma-separated list of derivative nicknames a single time. This same command can be called with `runDerivative` or the key `derivative`.
+* `killDerivatives derivatives <comma-separated-nickname-list>`: Kills the derivatives in the comma-separated list of derivative nicknames. This same command can be called with `killDerivative` or the key `derivative`.
+* `make`: Makes binaries on the `supervisor` and `booter` machines. All `make` [specifications](#environment-setup-and-make) work with this command. There must not be a running graph to execute the `make` command.
+* `setDerivativeContinueOnError continue_on_error <0/1>`: Sets the autorun derivative option whether to continue running derivative steps after one failed (defaults to `1` on boot).
 
 ### Redis streams used with the `supervisor`
 
@@ -249,7 +296,6 @@ After loading a graph with a `startGraph` command to `supervisor`, `supervisor` 
 {
     "redis_host": <redis host>,
     "redis_port": <redis port>,
-    "brand_hash": <Git commit hash for the core BRAND repository>,
     "graph_name": <graph name>,
     "graph_loaded_ts": <timestamp upon startGraph in nanoseconds>,
     "nodes": {
@@ -258,7 +304,6 @@ After loading a graph with a `startGraph` command to `supervisor`, `supervisor` 
             "nickname": <node 1 nickname>,
             "module": <node 1's source module as a relative path to the BRAND root directory>,
             "binary": <full path to node 1's binary>,
-            "git_hash": <Git commit hash for node 1>,
             "run_priority": <optional, node 1's realtime priority>,
             "cpu_affinity": <optional, node 1's CPU affinity>,
             "parameters": {
@@ -272,7 +317,6 @@ After loading a graph with a `startGraph` command to `supervisor`, `supervisor` 
             "nickname": <node 2 nickname>,
             "module": <node 2's source module as a relative path to the BRAND root directory>,
             "binary": <full path to node 2's binary>,
-            "git_hash": <Git commit hash for node 2>,
             "run_priority": <optional, node 2's realtime priority>,
             "cpu_affinity": <optional, node 2's CPU affinity>,
             "parameters": {
@@ -284,18 +328,25 @@ After loading a graph with a `startGraph` command to `supervisor`, `supervisor` 
         ...
     },
     "derivatives": {
-        "<derivative 1 name>": {
-            <unstructured derivative information>
+        "<derivative 1 nickname>": {
+            "name": <derivative 1 name including extension>,
+            "nickname": <derivative 1 nickname>,
+            "module": <derivative 1's source module as a relative path to the BRAND root directory>,
+            "machine": <optional machine on which to run derivative 1>,
+            "autorun_step": <optional step in which to run derivative 1 during the autorun stage after stopping a graph>,
+            "filepath": <path to file as a relative path to supervisor's working directory>,
+            "parameters": <dictionary of derivative 2's parameters>
         },
-        "<derivative 2 name>": {
-            <unstructured derivative information>
+        "<derivative 2 nickname>": {
+            "full_path": <full path to derivative 2>,
+            "nickname": <derivative 2 nickname>,
+            "filepath": <path to file as a relative path to supervisor's working directory,
+            "parameters": <dictionary of derivative 2's parameters>
         }
         ...
     }
 }
 ```
-
-`make` will write a `git_hash.o` file to each node and derivative, which `supervisor` will write into the supergraph to easily track the exact code version used. When the `startGraph` command is sent, `booter` machines (see [Multi-machine graphs](#multi-machine-graphs) below) will generate a `GraphError` exception if the BRAND repository hashes do not match. Both `supervisor` and `booter` machines will generate a `NodeError` exception if the value in the local `git_hash.o` does not match the supergraph's Git hash for a node when `startGraph` is called. A warning will be printed in `supervisor` or `booter`'s console if the supergraph's Git hash for a node or derivative does not match the repository's hash. If a node is not located in a Git repository and does not have a `git_hash.o` file, then its Git hash in the supergraph will be an empty string.
 
 Note the presence of derivatives in the graph YAML file and the supergraph is optional. The structure of a derivative's information should be defined in the derivative's documentation. Derivatives are a new feature to BRAND, so check back in the future for more documentation and functionality.
 
@@ -406,7 +457,7 @@ If everything is working correctly, you should see that the `func_generator` nod
 
 ### `DerivativeError`
 
-`DerivativeError`s are thrown by `supervisor` if a derivative fails to exit gracefully. The error messages are printed and logged to the `graph_status` stream, but no other action is taken. Currently, this is only implemented for the `exportNWB` derivative, so check back later for more derivative features!
+`DerivativeError`s are thrown by `supervisor` if a derivative fails to exit gracefully. The error messages are printed and logged to the `graph_status` stream, but no other action is taken.
 
 ### `RedisError`
 

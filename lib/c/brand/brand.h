@@ -11,6 +11,12 @@
 redisContext* parse_command_line_args_init_redis(int argc, char **argv, char* NICKNAME);
 
 //--------------------------------------------------------------
+// Increment Redis ID
+//--------------------------------------------------------------
+
+void increment_redis_id(char *);
+
+//--------------------------------------------------------------
 // Tools for working with nxson
 //--------------------------------------------------------------
 
@@ -29,3 +35,5 @@ unsigned long get_graph_load_ts_long(const nx_json *json);
 
 enum node_state {NODE_STARTED, NODE_READY, NODE_SHUTDOWN, NODE_FATAL_ERROR, NODE_WARNING, NODE_SUPERGRAPH_UPDATE, NODE_INFO};
 void emit_status(redisContext *c, const char *node_name, enum node_state state, const char *node_message);
+int start_new_redis_instance(char *host, int port);
+void stop_new_redis_instance(char *host, int port);

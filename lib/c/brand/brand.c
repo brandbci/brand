@@ -18,7 +18,7 @@ redisContext* parse_command_line_args_init_redis(int argc, char **argv, char* NI
     int opt;
     int redis_port;
     char redis_host[20];
-    char node_stream_name[20];
+    char node_stream_name[50];
     char redis_socket[40];
 
     int nflg = 0, sflg = 0, iflg = 0, pflg = 0, errflg = 0;
@@ -103,6 +103,24 @@ redisContext* parse_command_line_args_init_redis(int argc, char **argv, char* NI
     return redis_context;
 }
 
+void increment_redis_id(char *id) {
+
+    char buffer[512];
+    strcpy(buffer, id);
+    // Extract the part before the dash
+
+    char *id1 = strtok(buffer, "-");
+    char *id2 = strtok(NULL, "-");
+
+    // Increment the id2 part
+    int id2_int = atoi(id2);
+    id2_int++;
+
+    // Put it back together
+    sprintf(id, "%s-%d", id1, id2_int);
+
+}
+
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Working with nxjson
@@ -116,6 +134,13 @@ void assert_object(const nx_json *json, nx_json_type json_type) {
         exit(1);
     } else if (json->type != json_type) {
         printf("The JSON object \"%s\" has type %d and attempted to assert it to type %d\n", json->key, json->type, json_type);
+        exit(1);
+    }
+}
+
+void assert_reply_not_null(redisReply *reply) {
+    if (reply == NULL || reply->type == REDIS_REPLY_ERROR || reply->type == REDIS_REPLY_NIL) {
+        printf("Error running redis command");
         exit(1);
     }
 }
@@ -329,5 +354,38 @@ void emit_status(redisContext *c, const char *node_name, enum node_state state, 
     freeReplyObject(reply);
 }
 
+int start_new_redis_instance(char *host, int port)
+{
+    char *new_redis_command = malloc(sizeof(char) * 512);    
+    //char *redis_port_string = malloc(sizeof(char) * 6);
+    //sprintf(redis_port_string, "%d", port);
+    // can also perform a chmod 777 <path_to_redis.conf>
+    char *brand_base_dir = getenv("BRAND_BASE_DIR");
+    sprintf(new_redis_command, "sudo redis-server %s/supervisor/redis_test.conf", brand_base_dir);
+    printf(" New start command%s\n", new_redis_command);
+    // strcat(new_redis_command,host);
+    // strcat(new_redis_command," --port ");
+    // strcat(new_redis_command,redis_port_string);
+    int redis_conn =  system(new_redis_command);
+    if(redis_conn == -1)
+    {
+        return -1;
+    }
+    free(new_redis_command);
+    return 1;
+}
 
-
+void stop_new_redis_instance(char *host, int port)
+{
+    char *new_redis_command = malloc(sizeof(char) * 512);    
+    char *redis_port_string = malloc(sizeof(char) * 6);
+    sprintf(redis_port_string, "%d", port);
+    strcpy(new_redis_command,"redis-cli -h ");
+    strcat(new_redis_command,host);
+    strcat(new_redis_command," -p ");
+    strcat(new_redis_command,redis_port_string);
+    strcat(new_redis_command," shutdown");
+    system(new_redis_command);
+    free(new_redis_command); 
+    free(redis_port_string);
+}

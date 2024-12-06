@@ -42,15 +42,17 @@ libsdl2-gfx-dev
 libsdl2-ttf-dev
 )
 
+sudo apt-get update
+
 # install pkgs in $dependencies
 for dep in ${dependencies[@]}; do
     info "Installing ${dep}"
-    [ "${dep}" == "redis-server" ] && sudo add-apt-repository -y ppa:chris-lea/redis-server
-    sudo apt-get update
     sudo apt-get -y install ${dep}
     checkStatus $? "failed to install ${dep}"
     info "Successfully installed ${dep}"
 done
+
+sudo snap install yq
 
 # check if elm command is available. If not prompt user for installation.
 install_elm=false
@@ -84,6 +86,3 @@ git submodule update --init --recursive
 checkStatus $? "failed to update git submodules"
 info "Your environment is ready!"
 info "Run \`conda activate rt\` before running make"
-
-
-

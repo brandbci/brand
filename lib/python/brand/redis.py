@@ -1,4 +1,6 @@
+import logging
 import numpy as np
+import redis
 
 
 def xread_count(r, stream, count, startid=0, block=None) -> list:
@@ -119,3 +121,33 @@ def xread_sync(self,
             out[i_s][1][i_c] = (entry_ids[i_s], entry_data[i_s])
 
     return out  # Return the synchronized output
+
+class RedisLoggingHandler(logging.Handler):
+    """
+    Send `logging` messages to a particular stream in Redis. (This stream can then be
+    read from and displayed in a custom GUI, for example.)
+    """
+
+    LOG_STREAM_NAME = "console_logging"
+
+    def __init__(self, redis_conn, name):
+        logging.Handler.__init__(self)
+
+        self.redis_conn = redis_conn
+
+        self.setFormatter(
+            logging.Formatter(
+                fmt=f"%(asctime)s.%(msecs)03d [{name}] %(levelname)s: %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.redis_conn.xadd(self.LOG_STREAM_NAME, {"message": msg})
+        except redis.exceptions.ConnectionError:
+            # If not connected to redis, that's ok, just do nothing.
+            pass
+        except:
+            self.handleError(record)
