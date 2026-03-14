@@ -37,3 +37,6 @@ pyglet_display.pyx
 # Python
 *.egg-info
 *.pkl
+
+# macOS
+.DS_Store
