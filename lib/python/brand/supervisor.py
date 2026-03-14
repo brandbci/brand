@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import platform
 import re
 import sh
 from sh import git
@@ -166,12 +167,16 @@ class Supervisor:
 
     def start_redis_server(self):
         redis_command = ['redis-server'] + self.redis_args
-        if self.redis_priority:
-            chrt_args = ['chrt', '-f', f'{self.redis_priority :d}']
-            redis_command = chrt_args + redis_command
-        if self.redis_affinity:
-            redis_command = ['taskset', '-c', self.redis_affinity
-                             ] + redis_command
+        if platform.system() != 'Darwin':
+            if self.redis_priority:
+                chrt_args = ['chrt', '-f', f'{self.redis_priority :d}']
+                redis_command = chrt_args + redis_command
+            if self.redis_affinity:
+                redis_command = ['taskset', '-c', self.redis_affinity
+                                 ] + redis_command
+        else:
+            if self.redis_priority or self.redis_affinity:
+                logger.warning('Skipping redis real-time priority/affinity settings (not supported on macOS)')
         logger.info('Starting redis: ' + ' '.join(redis_command))
         # get a process name by psutil
         proc = subprocess.Popen(redis_command, stdout=subprocess.PIPE)
@@ -426,16 +431,20 @@ class Supervisor:
                 args += ['-i', host, '-p', str(port)]
                 if self.unixsocket:
                     args += ['-s', self.unixsocket]
-                if 'run_priority' in node_info:  # if priority is specified
-                    priority = node_info['run_priority']
-                    if priority:  # if priority is not None or empty
-                        chrt_args = ['chrt', '-f', str(int(priority))]
-                        args = chrt_args + args
-                if 'cpu_affinity' in node_info:  # if affinity is specified
-                    affinity = node_info['cpu_affinity']
-                    if affinity:  # if affinity is not None or empty
-                        taskset_args = ['taskset', '-c', str(affinity)]
-                        args = taskset_args + args
+                if platform.system() != 'Darwin':
+                    if 'run_priority' in node_info:  # if priority is specified
+                        priority = node_info['run_priority']
+                        if priority:  # if priority is not None or empty
+                            chrt_args = ['chrt', '-f', str(int(priority))]
+                            args = chrt_args + args
+                    if 'cpu_affinity' in node_info:  # if affinity is specified
+                        affinity = node_info['cpu_affinity']
+                        if affinity:  # if affinity is not None or empty
+                            taskset_args = ['taskset', '-c', str(affinity)]
+                            args = taskset_args + args
+                else:
+                    if node_info.get('run_priority') or node_info.get('cpu_affinity'):
+                        logger.warning(f'Skipping real-time priority/affinity for node {node} (not supported on macOS)')
                 proc = subprocess.Popen(args)
                 proc.name = node
                 logger.info("Child process created with pid: %s" % proc.pid)
