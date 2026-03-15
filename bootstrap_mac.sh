@@ -45,6 +45,7 @@ sdl2
 sdl2_image
 sdl2_gfx
 sdl2_ttf
+node
 )
 
 # Install packages

@@ -40,6 +40,8 @@ libsdl2-image-dev
 libsdl2-gfx-1.0-0
 libsdl2-gfx-dev
 libsdl2-ttf-dev
+nodejs
+npm
 )
 
 # install pkgs in $dependencies
