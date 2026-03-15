@@ -11,3 +11,10 @@ export REDIS_PATH=$(ROOT)/lib/redis
 export BIN_PATH=$(ROOT)/bin
 export GENERATED_PATH=$(BIN_PATH)/generated
 $(shell mkdir -p $(GENERATED_PATH))
+
+# macOS (Apple ld) uses comma syntax for -rpath; GNU ld uses = syntax
+ifeq ($(shell uname),Darwin)
+export RPATH_PREFIX = -Wl,-rpath,
+else
+export RPATH_PREFIX = -Wl,-rpath=
+endif

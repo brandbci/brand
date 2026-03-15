@@ -1,4 +1,5 @@
 import ctypes
+import ctypes.util
 import time
 from ctypes import Structure, c_long, pointer
 from datetime import datetime
@@ -7,7 +8,7 @@ TIMEVAL_LEN = 16  # bytes
 TIMESPEC_LEN = 16  # bytes
 TIMER_ABSTIME = 1
 
-libc = ctypes.CDLL('libc.so.6')
+libc = ctypes.CDLL(ctypes.util.find_library('c'))
 
 
 class timespec(Structure):
