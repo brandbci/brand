@@ -10,9 +10,20 @@ CLEANDIRS_NODES = $(SUBDIRS_NODES:%=clean-%)
 CLEANDIRS_DERIVS = $(SUBDIRS_DERIVS:%=clean-%)
 
 # Get all directories in ../brand-modules/*/nodes/ and ../brand-modules/*/derivatives/
+# On macOS, exclude brand-nsp (requires Blackrock Cerebus hardware, Linux-only drivers)
 MODULES_BASE_PATH=../brand-modules
+ifeq ($(shell uname),Darwin)
+# Exclude brand-nsp (Blackrock Cerebus hardware, Linux-only) and Linux-only simulator nodes:
+#   - cb_generator: uses linux/input.h (no macOS replacement needed for tutorial)
+#   mouseAdapter is NOT excluded — it has a macOS Cython/pygame build path in its own Makefile
+MACOS_EXCLUDE=$(MODULES_BASE_PATH)/brand-nsp/% \
+              $(MODULES_BASE_PATH)/brand-simulator/nodes/cb_generator
+MODULES_NODES=$(filter-out $(MACOS_EXCLUDE),$(wildcard $(MODULES_BASE_PATH)/*/nodes/*))
+MODULES_DERIVS=$(filter-out $(MODULES_BASE_PATH)/brand-nsp/%,$(wildcard $(MODULES_BASE_PATH)/*/derivatives/*))
+else
 MODULES_NODES=$(wildcard $(MODULES_BASE_PATH)/*/nodes/*)
 MODULES_DERIVS=$(wildcard $(MODULES_BASE_PATH)/*/derivatives/*)
+endif
 
 # make some clean targets for all subdirs
 MODULES_CLEANDIRS_NODES = $(MODULES_NODES:%=clean-%)
@@ -77,8 +88,8 @@ $(MODULES_DERIVS): hiredis redis
 # a tmp cache is specified to avoid requiring root perms.
 hiredis: redis
 	$(MAKE) -C $(HIREDIS_PATH)
-	ldconfig -C /tmp/cache $(HIREDIS_PATH)
-	$(RM) /tmp/cache
+	# ldconfig is Linux-only; on macOS the dynamic linker finds libraries via DYLD_LIBRARY_PATH
+	$(if $(filter Darwin,$(shell uname)),,ldconfig -C /tmp/cache $(HIREDIS_PATH) && $(RM) /tmp/cache)
 
 redis:
 	$(MAKE) -C $(REDIS_PATH) redis-server redis-cli
