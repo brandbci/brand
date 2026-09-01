@@ -1,0 +1,64 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite the following paper."
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Ali
+      given-names: Yahia Hassan
+      orcid: 0000-0001-8618-3837
+    - family-names: Bodkin
+      given-names: Kevin L
+      orcid: 0000-0002-6329-7353
+    - family-names: Rigotti-Thompson
+      given-names: Mattia
+      orcid: 0009-0001-7298-274X
+    - family-names: Patel
+      given-names: Kushant
+    - family-names: Card
+      given-names: Nicholas S
+      orcid: 0000-0002-6858-268X
+    - family-names: Bhaduri
+      given-names: Bareesh
+      orcid: 0000-0002-4564-2555
+    - family-names: Nason-Tomaszewski
+      given-names: Samuel R
+      orcid: 0000-0002-7127-0986
+    - family-names: Mifsud
+      given-names: Domenick M
+      orcid: 0000-0001-8200-8193
+    - family-names: Hou
+      given-names: Xianda
+      orcid: 0009-0002-2066-8561
+    - family-names: Nicolas
+      given-names: Claire
+      orcid: 0000-0002-7761-3943
+    - family-names: Allcroft
+      given-names: Shane
+      orcid: 0000-0002-7903-5091
+    - family-names: Hochberg
+      given-names: Leigh
+      orcid: 0000-0003-0261-2273
+    - family-names: Au Yong
+      given-names: Nicholas
+      orcid: 0000-0002-7898-7832
+    - family-names: Stavisky
+      given-names: Sergey D
+      orcid: 0000-0002-5238-0573
+    - family-names: Miller
+      given-names: Lee E
+      orcid: 0000-0001-8675-7140
+    - family-names: Brandman
+      given-names: David
+      orcid: 0000-0003-3224-7019
+    - family-names: Pandarinath
+      given-names: Chethan
+      orcid: 0000-0003-1241-1432
+  title: "BRAND: A platform for closed-loop experiments with deep network models"
+  doi: 10.1088/1741-2552/ad3b3a
+  url: http://iopscience.iop.org/article/10.1088/1741-2552/ad3b3a
+  date-released: 2024-04-05
+  keywords:
+    - closed-loop experiments
+    - deep network models
+  journal: Journal of Neural Engineering
+  issn: 1741-2552
