@@ -8,15 +8,26 @@ The layout of each graph is defined in its associated .yaml configuration file. 
 ## Installation
 
 ### Requirements
-* Host Machine Running Ubuntu 20.04
-* Validated on PREEMPT_RT kernel version 5.15.43-rt45 [[install instructions](./doc/preempt_rt.md)]
-* [Anaconda3](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html) for Linux
+* Host machine running Ubuntu 20.04, or macOS on Apple Silicon
+* Linux only: validated on PREEMPT_RT kernel version 5.15.43-rt45 [[install instructions](./doc/preempt_rt.md)]
+* [Anaconda3](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html) for Linux, or [Miniconda](https://docs.conda.io/projects/conda/en/stable/user-guide/install/macos.html) built for arm64 for macOS
+* macOS only: [Homebrew](https://brew.sh) (`bootstrap_mac.sh` checks for it and exits if missing)
 
 ### Environment setup and Make
 `bootstrap.sh` is provided to automate the environment setup. It installs debian pkg dependencies using `apt-get` and creates the real-time conda environment (rt), which is defined by `environment.yaml`. [hiredis](https://github.com/redis/hiredis) and [redis](https://github.com/antirez/redis/) have been included as submodules, which also get initialized by `bootstrap.sh`. After running bootstrap you simply need to run `make` at the project root. This will build all the project binaries including submodule dependencies. Be sure to activate the conda env before running make for Makefiles dependent on cython.
 
 ```bash
-./boostrap.sh
+# Linux
+./bootstrap.sh
+conda activate rt
+make
+```
+
+On macOS, use the `_mac` variants of the setup scripts. `bootstrap_mac.sh` installs dependencies with Homebrew rather than `apt-get` and builds the `rt` environment from `environment_mac.yaml`. Everything after bootstrap -- `make`, `supervisor`, and the graph workflow -- is the same on both platforms.
+
+```bash
+# macOS (Apple Silicon)
+./bootstrap_mac.sh
 conda activate rt
 make
 ```
@@ -144,10 +155,10 @@ nodes:
 After having installed and compiled the node executables, the following commands must be run to start the BRAND system:
 
 ```bash
-source setup.sh
+source setup.sh          # macOS: source setup_mac.sh
 supervisor [args]
 ```
- - `setup.sh` is a script that defines a series of helper functions that make the workflow easier. It also sets the conda environment. 
+ - `setup.sh` (`setup_mac.sh` on macOS) is a script that defines a series of helper functions that make the workflow easier. It also sets the conda environment. 
  - `supervisor` is the core process controlling the BRAND system.
 
 Optionally, you can include arguments when running the `supervisor` to override its defaults. Below are the extra arguments that can be used:
